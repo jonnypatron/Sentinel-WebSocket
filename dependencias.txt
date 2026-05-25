@@ -1,5 +1,0 @@
-sudo apt install libwebsocketpp-dev nlohmann-json3-dev libboost-system-dev
- 
-# libwebsocketpp-dev  → biblioteca websocketpp (servidor WebSocket em C++)
-# nlohmann-json3-dev  → biblioteca JSON (construção do header de cada frame)
-# libboost-system-dev → Boost.System (motor de rede assíncrono usado pelo websocketpp)
