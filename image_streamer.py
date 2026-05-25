@@ -29,7 +29,6 @@ from sensor_msgs.msg import CompressedImage
 
 import websockets
 import websockets.exceptions
-from websockets.asyncio.server import ServerConnection
 
 # ── Cores ANSI para o terminal ─────────────────────────────────────────────────
 GREEN  = "\033[1;32m"
@@ -105,7 +104,7 @@ class ImageStreamer(Node):
             )
             await asyncio.Future()  # bloqueia até o nó ser destruído
 
-    async def _handle_client(self, ws: ServerConnection):
+    async def _handle_client(self, ws):
         """Callback chamado para cada nova ligação WebSocket."""
         # Regista o cliente (equivalente a wsServer.set_open_handler no C++)
         with self._lock:
@@ -130,7 +129,7 @@ class ImageStreamer(Node):
             # Limpeza ao desligar (equivalente a wsServer.set_close_handler)
             await self._cleanup_client(ws)
 
-    async def _handle_message(self, ws: ServerConnection, payload: str):
+    async def _handle_message(self, ws, payload: str):
         """
         Processa um comando JSON enviado pelo cliente.
         Protocolo (texto):
@@ -162,7 +161,7 @@ class ImageStreamer(Node):
         elif cmd == "disable": self._handle_disable(ws, topic)
         elif cmd == "switch":  self._handle_switch(ws, topic)
 
-    async def _cleanup_client(self, ws: ServerConnection):
+    async def _cleanup_client(self, ws):
         """
         Remove o cliente dos estados e cancela a subscrição ROS2 se ficar vazia.
         Equivalente a wsServer.set_close_handler no C++.
@@ -207,7 +206,7 @@ class ImageStreamer(Node):
     # Equivalentes a handleStreamEnable/Disable/Switch no C++.
     # Chamados a partir do thread asyncio mas protegidos pelo _lock.
 
-    def _handle_enable(self, ws: ServerConnection, topic: str):
+    def _handle_enable(self, ws, topic: str):
         """Começa a enviar o tópico para este cliente."""
         sub_created = None
         client_id   = -1
@@ -240,7 +239,7 @@ class ImageStreamer(Node):
             f"Viewers: {viewers}{CLEAR}"
         )
 
-    def _handle_disable(self, ws: ServerConnection, topic: str):
+    def _handle_disable(self, ws, topic: str):
         """Para de enviar o tópico para este cliente."""
         sub_to_destroy = None
         client_id      = -1
@@ -270,7 +269,7 @@ class ImageStreamer(Node):
             f"'{topic}'. Viewers: {viewers}{CLEAR}"
         )
 
-    def _handle_switch(self, ws: ServerConnection, new_topic: str):
+    def _handle_switch(self, ws, new_topic: str):
         """Troca atomicamente de tópico (sem reconexão WebSocket)."""
         old_sub_to_destroy = None
         client_id          = -1
@@ -379,7 +378,7 @@ class ImageStreamer(Node):
                 self._send_frame(ws, frame), self._loop
             )
 
-    async def _send_frame(self, ws: ServerConnection, frame: bytes) -> None:
+    async def _send_frame(self, ws, frame: bytes) -> None:
         """Envia um frame binário para um cliente. Corre no loop asyncio."""
         try:
             await ws.send(frame)
@@ -396,6 +395,7 @@ class ImageStreamer(Node):
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
+    print("[ImageStreamer] A iniciar...", flush=True)
     rclpy.init()
     node = ImageStreamer()
 
